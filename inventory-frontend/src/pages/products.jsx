@@ -9,23 +9,20 @@ import {
 import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SupplierForm from "../components/SupplierForm";
+import ProductModal from "../components/ProductModal";
 
-export default function Suppliers() {
+export default function Products() {
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState("");
-  const [editingSupplier, setEditingSupplier] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   useEffect(() => {
+    // mock data before API integration
     setRows([
-      {
-        id: 1,
-        name: "TechZone Ltd",
-        contact_person: "Alex O.",
-        phone: "0712 345 678",
-        email: "info@techzone.com",
-        category: "Electronics"
-      }
+      { id: 1, name: "Laptop", category: "Electronics", stock: 34, price: 1200 },
+      { id: 2, name: "Printer", category: "Electronics", stock: 12, price: 300 },
+      { id: 3, name: "Chair", category: "Furniture", stock: 50, price: 80 }
     ]);
   }, []);
 
@@ -33,36 +30,43 @@ export default function Suppliers() {
     r.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleAdd = () => {
+    setEditingProduct(null);
+    setModalOpen(true);
+  };
+
+  const handleEdit = (row) => {
+    setEditingProduct(row);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    setRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
   const handleSubmit = (data) => {
-    if (editingSupplier) {
+    if (editingProduct) {
       setRows((prev) =>
-        prev.map((s) =>
-          s.id === editingSupplier.id ? { ...data, id: s.id } : s
-        )
+        prev.map((r) => (r.id === editingProduct.id ? { ...data, id: r.id } : r))
       );
-      setEditingSupplier(null);
     } else {
       setRows((prev) => [...prev, { ...data, id: prev.length + 1 }]);
     }
   };
 
-  const handleDelete = (id) => {
-    setRows((prev) => prev.filter((s) => s.id !== id));
-  };
-
   const columns = [
     { field: "name", headerName: "Name", flex: 1 },
-    { field: "contact_person", headerName: "Contact Person", flex: 1 },
-    { field: "phone", headerName: "Phone", flex: 1 },
-    { field: "email", headerName: "Email", flex: 1 },
     { field: "category", headerName: "Category", flex: 1 },
+    { field: "stock", headerName: "Stock", flex: 1 },
+    { field: "price", headerName: "Price (KES)", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
       width: 150,
+      sortable: false,
       renderCell: (params) => (
         <>
-          <IconButton onClick={() => setEditingSupplier(params.row)}>
+          <IconButton onClick={() => handleEdit(params.row)}>
             <EditIcon color="primary" />
           </IconButton>
 
@@ -76,31 +80,29 @@ export default function Suppliers() {
 
   return (
     <div>
-      <Typography variant="h4" gutterBottom>Suppliers</Typography>
+      <Typography variant="h4" gutterBottom>Products</Typography>
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
-          placeholder="Search suppliers..."
+          placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button
-          variant="contained"
-          onClick={() => setEditingSupplier(null)}
-        >
-          Add Supplier
+        <Button variant="contained" onClick={handleAdd}>
+          Add Product
         </Button>
       </Stack>
 
-      {/* Reuse SupplierForm dynamically for add/edit */}
-      <SupplierForm
-        onSubmit={handleSubmit}
-        initialData={editingSupplier}
-      />
-
-      <div style={{ height: 400, width: "100%", marginTop: 20 }}>
+      <div style={{ height: 400, width: "100%" }}>
         <DataGrid rows={filteredRows} columns={columns} pageSize={5} />
       </div>
+
+      <ProductModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleSubmit}
+        product={editingProduct}
+      />
     </div>
   );
 }
